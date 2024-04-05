@@ -54,6 +54,23 @@ See https://bkl.gopatchy.io/#bkli for detailed documentation.`
 		format = strings.TrimPrefix(filepath.Ext(string(*opts.OutputPath)), ".")
 	}
 
+	fh := os.Stdout
+	var parentDocuments []*bkl.Document
+
+	if opts.OutputPath != nil {
+		fh, err = os.OpenFile(string(*opts.OutputPath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+		if err != nil {
+			fatal(err)
+		}
+
+		b := bkl.New()
+		err = b.MergeFileLayers(string(*opts.OutputPath))
+		if err != nil {
+			fatal(err)
+		}
+		parentDocuments = b.Documents()
+	}
+
 	var doc any
 
 	for p, path := range opts.Positional.InputPaths {
@@ -90,6 +107,16 @@ See https://bkl.gopatchy.io/#bkli for detailed documentation.`
 		}
 	}
 
+	for _, parent := range parentDocuments {
+		if parent.Data == nil {
+			continue
+		}
+		doc, err = subtract(doc, parent.Data)
+		if err != nil {
+			fatal(err)
+		}
+	}
+
 	f, err := bkl.GetFormat(format)
 	if err != nil {
 		fatal(err)
@@ -98,15 +125,6 @@ See https://bkl.gopatchy.io/#bkli for detailed documentation.`
 	enc, err := f.MarshalStream([]any{doc})
 	if err != nil {
 		fatal(err)
-	}
-
-	fh := os.Stdout
-
-	if opts.OutputPath != nil {
-		fh, err = os.OpenFile(string(*opts.OutputPath), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
-		if err != nil {
-			fatal(err)
-		}
 	}
 
 	_, err = fh.Write(enc)
