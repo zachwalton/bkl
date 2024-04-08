@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -79,7 +78,8 @@ func walkMapMap(path string, a, b map[string]any, o op) (map[string]any, error) 
 		if err != nil {
 			return nil, err
 		}
-		if ret == nil {
+
+		if v3 == nil {
 			continue
 		}
 
@@ -120,7 +120,7 @@ func walkListList(path string, a, b []any, o op) ([]any, error) { //nolint:unpar
 		matchedMap := false
 		for _, v2 := range b {
 			if listEntryMatches(path, v1, v2) {
-				ret, err = walk(path, v1, v2, o)
+				ret, err = walkMapMap(path, v1.(map[string]any), v2.(map[string]any), o)
 				if err != nil {
 					return nil, err
 				}
@@ -194,7 +194,6 @@ func listEntryMatches(path, a, b any) bool {
 		}
 
 		if m1ok && m2ok && a == b {
-			fmt.Println(path, p, a, b)
 			return true
 		}
 	}
